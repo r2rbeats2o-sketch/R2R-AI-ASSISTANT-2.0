@@ -68,7 +68,14 @@ namespace
                            + "x-goog-api-key: " + key + "\r\n";
         auto* bodyObject = new juce::DynamicObject();
         bodyObject->setProperty("model", "gemini-3.8-flash");
+        bodyObject->setProperty("system_instruction",
+            "You are R2R AI Assistant 2.0, a practical music-production copilot. "
+            "Give clear, actionable help for music arrangement, sound design, synthesis, "
+            "MIDI, chords, rhythm, mixing, mastering, and DAW workflows. "
+            "When useful, include BPM, key, bar counts, and step-by-step settings. "
+            "Do not claim to control the DAW or plugin parameters unless an implemented tool does so.");
         bodyObject->setProperty("input", prompt);
+        bodyObject->setProperty("store", false);
         const auto body = juce::JSON::toString(juce::var(bodyObject));
         const auto bodyUtf8 = body.toUTF8();
 
