@@ -311,8 +311,6 @@ void R2RAIAssistantAudioProcessorEditor::resized()
     apiKeyBox.setBounds(40, 438, w - 300, 38);
     saveKeyButton.setBounds(w - 244, 438, 120, 38);
     clearKeyButton.setBounds(w - 112, 438, 72, 38);
-    localModelLabel.setBounds(40, 414, w - 80, 20);
-    localModelBox.setBounds(40, 438, w - 80, 38);
     promptBox.setBounds(40, 490, w - 80, 108);
     askButton.setBounds(w - 220, 612, 180, 42);
     rootBox.setBounds(42, 242, 180, 42);
