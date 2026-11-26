@@ -197,7 +197,7 @@ void R2RAIAssistantAudioProcessorEditor::sendGeminiPrompt()
     {
         juce::SystemClipboard::copyText(prompt);
         const bool opened = juce::URL("https://chatgpt.com/").launchInDefaultBrowser();
-        assistantText.setText("CHATGPT FREE OPENED IN YOUR BROWSER.\\n\\nYour prompt has been copied to the clipboard. Paste it into ChatGPT and send. Replies appear in the browser, not inside this VST3.",
+        assistantText.setText("CHATGPT FREE OPENED IN YOUR BROWSER.\n\nYour prompt has been copied to the clipboard. Paste it into ChatGPT and send. Replies appear in the browser, not inside this VST3.",
                               juce::dontSendNotification);
         statusLabel.setText(opened ? "PROMPT COPIED  •  CHATGPT OPENED IN BROWSER"
                                    : "PROMPT COPIED  •  OPEN CHATGPT.COM IN YOUR BROWSER",
@@ -212,7 +212,7 @@ void R2RAIAssistantAudioProcessorEditor::sendGeminiPrompt()
         return;
     }
 
-    assistantText.setText("GEMINI IS THINKING...\\nSending request over HTTPS.", juce::dontSendNotification);
+    assistantText.setText("GEMINI IS THINKING...\nSending request over HTTPS.", juce::dontSendNotification);
     statusLabel.setText("CONNECTING TO GEMINI...", juce::dontSendNotification);
     askButton.setEnabled(false);
 
