@@ -17,7 +17,7 @@ namespace
         if (!CredReadW(credentialTarget, CRED_TYPE_GENERIC, 0, &credential) || credential == nullptr)
             return {};
         const auto value = juce::String::fromUTF8(
-            static_cast<const char*>(credential->CredentialBlob),
+            reinterpret_cast<const char*>(credential->CredentialBlob),
             static_cast<int>(credential->CredentialBlobSize));
         CredFree(credential);
         return value;
@@ -139,15 +139,22 @@ namespace
             {
                 if (!candidateArray->isEmpty())
                 {
-                    const auto content = candidateArray->getFirst().getProperty("content");
-                    const auto partsValue = content.getProperty("parts");
-                    if (auto* partArray = partsValue.getArray())
+                    if (auto* candidateObject = candidateArray->getFirst().getDynamicObject())
                     {
-                        juce::String answer;
-                        for (const auto& part : *partArray)
-                            answer += part.getProperty("text").toString();
-                        if (answer.isNotEmpty())
-                            return answer;
+                        const auto content = candidateObject->getProperty("content");
+                        if (auto* contentObject = content.getDynamicObject())
+                        {
+                            const auto partsValue = contentObject->getProperty("parts");
+                            if (auto* partArray = partsValue.getArray())
+                            {
+                                juce::String answer;
+                                for (const auto& part : *partArray)
+                                    if (auto* partObject = part.getDynamicObject())
+                                        answer += partObject->getProperty("text").toString();
+                                if (answer.isNotEmpty())
+                                    return answer;
+                            }
+                        }
                     }
                 }
             }
