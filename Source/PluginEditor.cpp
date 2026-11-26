@@ -12,7 +12,7 @@ namespace
 R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssistantAudioProcessor& p)
     : AudioProcessorEditor(&p), processor(p),
       navAssistant("AI ASSISTANT"), navChords("CHORD LAB"), navMidi("MIDI TOOLS"), navMix("MIX GUIDE"),
-      generateButton("GENERATE CHORD"), askButton("ASK GEMMA"),
+      generateButton("GENERATE CHORD"), askButton("OPEN CHATGPT FREE"),
       saveKeyButton("SAVE KEY"), clearKeyButton("CLEAR")
 {
     setSize(980, 740);
@@ -24,7 +24,7 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     brandLabel.setColour(juce::Label::textColourId, cyan);
     addAndMakeVisible(brandLabel);
 
-    versionLabel.setText("AI ASSISTANT 2.0  /  GEMMA LOCAL + GEMINI ONLINE", juce::dontSendNotification);
+    versionLabel.setText("AI ASSISTANT 2.0  /  CHATGPT FREE + GEMINI ONLINE", juce::dontSendNotification);
     versionLabel.setColour(juce::Label::textColourId, muted);
     versionLabel.setFont(juce::Font(juce::FontOptions(11.0f)));
     addAndMakeVisible(versionLabel);
@@ -45,7 +45,7 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     pageTitle.setColour(juce::Label::textColourId, juce::Colours::white);
     addAndMakeVisible(pageTitle);
 
-    statusLabel.setText("GEMMA LOCAL  •  START OLLAMA TO CONNECT", juce::dontSendNotification);
+    statusLabel.setText("CHATGPT FREE  •  OPEN IN YOUR WEB BROWSER", juce::dontSendNotification);
     statusLabel.setColour(juce::Label::textColourId, cyan);
     statusLabel.setFont(juce::Font(juce::FontOptions(11.0f)));
     addAndMakeVisible(statusLabel);
@@ -55,7 +55,7 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     providerLabel.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::bold)));
     addAndMakeVisible(providerLabel);
 
-    providerBox.addItem("GEMMA LOCAL  /  OFFLINE", 1);
+    providerBox.addItem("CHATGPT FREE  /  BROWSER", 1);
     providerBox.addItem("GEMINI ONLINE  /  API", 2);
     providerBox.setSelectedId(1, juce::dontSendNotification);
     providerBox.setColour(juce::ComboBox::backgroundColourId, panel);
@@ -64,7 +64,7 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     addAndMakeVisible(providerBox);
     providerBox.onChange = [this] { updateProviderControls(); };
 
-    assistantText.setText("R2R MUSIC PRODUCTION CO-PILOT\nGemma runs locally on this PC through Ollama. No Gemini API key or internet connection is needed after the model is downloaded.", juce::dontSendNotification);
+    assistantText.setText("R2R MUSIC PRODUCTION CO-PILOT\nChatGPT Free opens in your browser. Your prompt is copied automatically; paste it into ChatGPT to continue. No API key required.", juce::dontSendNotification);
     assistantText.setColour(juce::Label::textColourId, muted);
     assistantText.setJustificationType(juce::Justification::topLeft);
     assistantText.setMinimumHorizontalScale(1.0f);
@@ -276,7 +276,7 @@ void R2RAIAssistantAudioProcessorEditor::setPage(int page)
     updateProviderControls();
 
     if (page == 0)
-        assistantText.setText("R2R MUSIC PRODUCTION CO-PILOT\nGemma Local runs through Ollama on this PC. Once the model is downloaded, prompts run locally without a Gemini API key.", juce::dontSendNotification);
+        assistantText.setText("R2R MUSIC PRODUCTION CO-PILOT\nChoose ChatGPT Free to open ChatGPT in your browser. The prompt is copied automatically; paste it into ChatGPT. Gemini API remains available as an optional provider.", juce::dontSendNotification);
     else if (page == 2)
         assistantText.setText("MIDI WORKSPACE\n\nIncoming MIDI passes through. Use CHORD LAB to generate a triad into your DAW. Record the MIDI output on an instrument track routed from this plugin.", juce::dontSendNotification);
     else if (page == 3)
@@ -297,7 +297,7 @@ void R2RAIAssistantAudioProcessorEditor::paint(juce::Graphics& g)
     g.fillRect(16.0f, 151.0f, 3.0f, 70.0f);
     g.setColour(muted);
     g.setFont(juce::Font(juce::FontOptions(10.0f)));
-    g.drawText("R2R VISION  /  LOCAL GEMMA + GEMINI MUSIC INTELLIGENCE", 28, getHeight() - 32, getWidth() - 56, 16, juce::Justification::centredLeft);
+    g.drawText("R2R VISION  /  CHATGPT FREE + GEMINI MUSIC INTELLIGENCE", 28, getHeight() - 32, getWidth() - 56, 16, juce::Justification::centredLeft);
 }
 
 void R2RAIAssistantAudioProcessorEditor::resized()
