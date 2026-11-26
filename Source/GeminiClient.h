@@ -14,14 +14,11 @@ public:
     juce::String loadApiKey() const;
     void clearApiKey();
     bool ask(const juce::String& prompt, const juce::String& apiKey, Reply reply);
-    bool askLocal(const juce::String& prompt, const juce::String& model, Reply reply);
 
 private:
     void run() override;
     juce::String pendingPrompt;
     juce::String pendingKey;
-    juce::String pendingModel;
-    bool pendingLocal = false;
     Reply pendingReply;
     juce::CriticalSection requestLock;
 
