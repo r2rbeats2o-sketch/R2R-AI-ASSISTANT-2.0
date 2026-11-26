@@ -67,7 +67,7 @@ namespace
         const auto headers = juce::String("Content-Type: application/json\r\n")
                            + "x-goog-api-key: " + key + "\r\n";
         auto* bodyObject = new juce::DynamicObject();
-        bodyObject->setProperty("model", "gemini-3.8-flash");
+        bodyObject->setProperty("model", "gemini-3.5-flash-lite");
         bodyObject->setProperty("system_instruction",
             "You are R2R AI Assistant 2.0, a practical music-production copilot. "
             "Give clear, actionable help for music arrangement, sound design, synthesis, "
