@@ -33,7 +33,18 @@ namespace
         credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
         credential.CredentialBlob = reinterpret_cast<LPBYTE>(const_cast<char*>(utf8.getAddress()));
         credential.CredentialBlobSize = static_cast<DWORD>(utf8.sizeInBytes() - 1);
-        return CredWriteW(&credential, 0) == TRUE;
+        if (!CredWriteW(&credential, 0))
+            return false;
+        return readCredential() == key;
+    }
+
+    juce::String musicCopilotInstruction()
+    {
+        return "You are R2R AI Assistant 2.0, a practical music-production copilot. "
+               "Give clear, actionable help for music arrangement, sound design, synthesis, "
+               "MIDI, chords, rhythm, mixing, mastering, and DAW workflows. "
+               "When useful, include BPM, key, bar counts, and step-by-step settings. "
+               "Do not claim to control the DAW or plugin parameters unless an implemented tool does so.";
     }
 
     juce::String performGeminiRequest(const juce::String& prompt, const juce::String& key)
@@ -68,12 +79,7 @@ namespace
                            + "x-goog-api-key: " + key + "\r\n";
         auto* bodyObject = new juce::DynamicObject();
         bodyObject->setProperty("model", "gemini-3.5-flash-lite");
-        bodyObject->setProperty("system_instruction",
-            "You are R2R AI Assistant 2.0, a practical music-production copilot. "
-            "Give clear, actionable help for music arrangement, sound design, synthesis, "
-            "MIDI, chords, rhythm, mixing, mastering, and DAW workflows. "
-            "When useful, include BPM, key, bar counts, and step-by-step settings. "
-            "Do not claim to control the DAW or plugin parameters unless an implemented tool does so.");
+        bodyObject->setProperty("system_instruction", musicCopilotInstruction());
         bodyObject->setProperty("input", prompt);
         bodyObject->setProperty("store", false);
         const auto body = juce::JSON::toString(juce::var(bodyObject));
@@ -154,10 +160,112 @@ namespace
         }
         return "Gemini returned no text. Try a shorter prompt.";
     }
+
+    juce::String performGemmaLocalRequest(const juce::String& prompt, const juce::String& model)
+    {
+        HINTERNET session = WinHttpOpen(L"R2R-AI-Assistant/2.0",
+                                        WINHTTP_ACCESS_TYPE_NO_PROXY,
+                                        WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+        if (session == nullptr)
+            return "Gemma Local error: Windows could not start local networking.";
+
+        WinHttpSetTimeouts(session, 3000, 3000, 30000, 120000);
+        HINTERNET connection = WinHttpConnect(session, L"127.0.0.1", 11434, 0);
+        if (connection == nullptr)
+        {
+            WinHttpCloseHandle(session);
+            return "Gemma Local error: Ollama is not running. Start Ollama, then try again.";
+        }
+
+        HINTERNET request = WinHttpOpenRequest(connection, L"POST", L"/api/chat", nullptr,
+            WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+        if (request == nullptr)
+        {
+            WinHttpCloseHandle(connection);
+            WinHttpCloseHandle(session);
+            return "Gemma Local error: could not create a request to Ollama.";
+        }
+
+        auto* systemMessage = new juce::DynamicObject();
+        systemMessage->setProperty("role", "system");
+        systemMessage->setProperty("content", musicCopilotInstruction());
+        auto* userMessage = new juce::DynamicObject();
+        userMessage->setProperty("role", "user");
+        userMessage->setProperty("content", prompt);
+        auto* messageArray = new juce::Array<juce::var>();
+        messageArray->add(juce::var(systemMessage));
+        messageArray->add(juce::var(userMessage));
+
+        auto* bodyObject = new juce::DynamicObject();
+        bodyObject->setProperty("model", model.trim());
+        bodyObject->setProperty("messages", juce::var(messageArray));
+        bodyObject->setProperty("stream", false);
+        const auto body = juce::JSON::toString(juce::var(bodyObject));
+        const auto bodyUtf8 = body.toUTF8();
+        const auto headers = juce::String("Content-Type: application/json\r\n");
+
+        const BOOL sent = WinHttpSendRequest(request, headers.toWideCharPointer(),
+            static_cast<DWORD>(-1L), const_cast<char*>(bodyUtf8.getAddress()),
+            static_cast<DWORD>(bodyUtf8.sizeInBytes() - 1),
+            static_cast<DWORD>(bodyUtf8.sizeInBytes() - 1), 0);
+        if (!sent || !WinHttpReceiveResponse(request, nullptr))
+        {
+            WinHttpCloseHandle(request);
+            WinHttpCloseHandle(connection);
+            WinHttpCloseHandle(session);
+            return "Gemma Local error: cannot connect to Ollama at 127.0.0.1:11434. "
+                   "Install/start Ollama and download the selected model.";
+        }
+
+        DWORD statusCode = 0, statusSize = sizeof(statusCode);
+        WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                            WINHTTP_HEADER_NAME_BY_INDEX, &statusCode, &statusSize,
+                            WINHTTP_NO_HEADER_INDEX);
+
+        juce::MemoryBlock response;
+        DWORD available = 0;
+        while (WinHttpQueryDataAvailable(request, &available) && available > 0)
+        {
+            juce::HeapBlock<char> chunk(static_cast<size_t>(available) + 1);
+            DWORD downloaded = 0;
+            if (!WinHttpReadData(request, chunk.getData(), available, &downloaded) || downloaded == 0)
+                break;
+            response.append(chunk.getData(), downloaded);
+        }
+
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+
+        const auto responseText = juce::String::fromUTF8(
+            static_cast<const char*>(response.getData()), static_cast<int>(response.getSize()));
+        const auto parsed = juce::JSON::parse(responseText);
+
+        if (statusCode < 200 || statusCode >= 300)
+        {
+            if (auto* root = parsed.getDynamicObject())
+                if (root->hasProperty("error"))
+                    return "Gemma Local error (HTTP " + juce::String((int) statusCode) + "): "
+                         + root->getProperty("error").toString();
+            return "Gemma Local error: Ollama returned HTTP " + juce::String((int) statusCode) + ".";
+        }
+
+        if (auto* root = parsed.getDynamicObject())
+        {
+            const auto message = root->getProperty("message");
+            if (auto* messageObject = message.getDynamicObject())
+            {
+                const auto answer = messageObject->getProperty("content").toString();
+                if (answer.isNotEmpty())
+                    return answer;
+            }
+        }
+        return "Gemma Local error: no text returned. Confirm that the selected model is installed.";
+    }
 #endif
 }
 
-GeminiClient::GeminiClient() : Thread("R2R Gemini request") {}
+GeminiClient::GeminiClient() : Thread("R2R AI request") {}
 
 GeminiClient::~GeminiClient()
 {
@@ -200,6 +308,24 @@ bool GeminiClient::ask(const juce::String& prompt, const juce::String& apiKey, R
         const juce::ScopedLock lock(requestLock);
         pendingPrompt = prompt.trim();
         pendingKey = apiKey.trim();
+        pendingModel.clear();
+        pendingLocal = false;
+        pendingReply = std::move(reply);
+    }
+    return startThread();
+}
+
+bool GeminiClient::askLocal(const juce::String& prompt, const juce::String& model, Reply reply)
+{
+    if (isThreadRunning() || prompt.trim().isEmpty() || model.trim().isEmpty())
+        return false;
+
+    {
+        const juce::ScopedLock lock(requestLock);
+        pendingPrompt = prompt.trim();
+        pendingKey.clear();
+        pendingModel = model.trim();
+        pendingLocal = true;
         pendingReply = std::move(reply);
     }
     return startThread();
@@ -207,20 +333,23 @@ bool GeminiClient::ask(const juce::String& prompt, const juce::String& apiKey, R
 
 void GeminiClient::run()
 {
-    juce::String prompt, key;
+    juce::String prompt, key, model;
+    bool useLocal = false;
     Reply reply;
     {
         const juce::ScopedLock lock(requestLock);
         prompt = pendingPrompt;
         key = pendingKey;
+        model = pendingModel;
+        useLocal = pendingLocal;
         reply = pendingReply;
     }
 
     juce::String result;
 #if JUCE_WINDOWS
-    result = performGeminiRequest(prompt, key);
+    result = useLocal ? performGemmaLocalRequest(prompt, model) : performGeminiRequest(prompt, key);
 #else
-    result = "Gemini networking is currently implemented for Windows builds.";
+    result = "AI networking is currently implemented for Windows builds.";
 #endif
 
     if (reply)
@@ -229,7 +358,9 @@ void GeminiClient::run()
     {
         const juce::ScopedLock lock(requestLock);
         pendingKey.clear();
+        pendingModel.clear();
         pendingPrompt.clear();
+        pendingLocal = false;
         pendingReply = {};
     }
 }
