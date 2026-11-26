@@ -35,5 +35,8 @@ private:
     std::atomic<int> pendingRoot { -1 };
     std::atomic<int> pendingQuality { 0 };
     double currentSampleRate = 44100.0;
+    int activeChordNotes[3] { -1, -1, -1 };
+    int activeChordCount = 0;
+    int samplesUntilNoteOff = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(R2RAIAssistantAudioProcessor)
 };
