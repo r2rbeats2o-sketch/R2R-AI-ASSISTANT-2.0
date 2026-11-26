@@ -43,3 +43,6 @@ target_link_libraries(R2RAIAssistant PRIVATE
   PUBLIC juce::juce_recommended_config_flags
          juce::juce_recommended_lto_flags
          juce::juce_recommended_warning_flags)
+
+# Generate the aggregate JUCE header included by the plugin source files.
+juce_generate_juce_header(R2RAIAssistant)
