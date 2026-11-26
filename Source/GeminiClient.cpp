@@ -192,13 +192,13 @@ namespace
         auto* userMessage = new juce::DynamicObject();
         userMessage->setProperty("role", "user");
         userMessage->setProperty("content", prompt);
-        auto* messageArray = new juce::Array<juce::var>();
-        messageArray->add(juce::var(systemMessage));
-        messageArray->add(juce::var(userMessage));
+        juce::Array<juce::var> messageArray;
+        messageArray.add(juce::var(systemMessage));
+        messageArray.add(juce::var(userMessage));
 
         auto* bodyObject = new juce::DynamicObject();
         bodyObject->setProperty("model", model.trim());
-        bodyObject->setProperty("messages", juce::var(messageArray));
+        bodyObject->setProperty("messages", messageArray);
         bodyObject->setProperty("stream", false);
         const auto body = juce::JSON::toString(juce::var(bodyObject));
         const auto bodyUtf8 = body.toUTF8();
