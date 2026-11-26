@@ -27,10 +27,10 @@ private:
     R2RAIAssistantAudioProcessor& processor;
     GeminiClient gemini;
     juce::Label brandLabel, versionLabel, pageTitle, statusLabel, chordLabel, assistantText;
-    juce::Label apiKeyLabel, providerLabel, localModelLabel;
+    juce::Label apiKeyLabel, providerLabel;
     juce::TextButton navAssistant, navChords, navMidi, navMix, generateButton, askButton, saveKeyButton, clearKeyButton;
     juce::ComboBox rootBox, qualityBox, providerBox;
-    juce::TextEditor promptBox, apiKeyBox, localModelBox;
+    juce::TextEditor promptBox, apiKeyBox;
     juce::Slider intensitySlider;
     int currentPage = 0;
 
