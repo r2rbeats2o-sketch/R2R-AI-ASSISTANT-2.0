@@ -195,7 +195,7 @@ void R2RAIAssistantAudioProcessorEditor::sendGeminiPrompt()
 
     if (!useGemini)
     {
-        juce::SystemClipboard::copyText(prompt);
+        juce::SystemClipboard::copyTextToClipboard(prompt);
         const bool opened = juce::URL("https://chatgpt.com/").launchInDefaultBrowser();
         assistantText.setText("CHATGPT FREE OPENED IN YOUR BROWSER.\n\nYour prompt has been copied to the clipboard. Paste it into ChatGPT and send. Replies appear in the browser, not inside this VST3.",
                               juce::dontSendNotification);
