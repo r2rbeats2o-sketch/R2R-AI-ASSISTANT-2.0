@@ -239,7 +239,6 @@ void GeminiClient::run()
         const juce::ScopedLock lock(requestLock);
         pendingKey.clear();
         pendingPrompt.clear();
-        pendingLocal = false;
         pendingReply = {};
     }
 }
