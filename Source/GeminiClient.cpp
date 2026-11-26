@@ -64,8 +64,8 @@ namespace
             return "Connection error: could not create the HTTPS request.";
         }
 
-        const auto headers = juce::String("Content-Type: application/json\\r\\n")
-                           + "x-goog-api-key: " + key + "\\r\\n";
+        const auto headers = juce::String("Content-Type: application/json\r\n")
+                           + "x-goog-api-key: " + key + "\r\n";
         const auto bodyObject = new juce::DynamicObject();
         auto* userContent = new juce::DynamicObject();
         auto* textPart = new juce::DynamicObject();
