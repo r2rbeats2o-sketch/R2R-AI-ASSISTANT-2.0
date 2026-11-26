@@ -54,7 +54,7 @@ namespace
         }
 
         HINTERNET request = WinHttpOpenRequest(connection, L"POST",
-            L"/v1beta/models/gemini-2.5-flash:generateContent", nullptr,
+            L"/v1beta/interactions", nullptr,
             WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
 
         if (request == nullptr)
@@ -72,15 +72,8 @@ namespace
         juce::ignoreUnused(json);
 
         auto* bodyObject = new juce::DynamicObject();
-        auto* contentObject = new juce::DynamicObject();
-        auto* partObject = new juce::DynamicObject();
-        partObject->setProperty("text", prompt);
-        juce::Array<juce::var> parts;
-        parts.add(juce::var(partObject));
-        contentObject->setProperty("parts", juce::var(parts));
-        juce::Array<juce::var> contents;
-        contents.add(juce::var(contentObject));
-        bodyObject->setProperty("contents", juce::var(contents));
+        bodyObject->setProperty("model", "gemini-3.8-flash");
+        bodyObject->setProperty("input", prompt);
         const auto body = juce::JSON::toString(juce::var(bodyObject));
         const auto bodyUtf8 = body.toUTF8();
 
@@ -134,29 +127,30 @@ namespace
 
         if (auto* root = parsed.getDynamicObject())
         {
-            const auto candidates = root->getProperty("candidates");
-            if (auto* candidateArray = candidates.getArray())
+            const auto stepsValue = root->getProperty("steps");
+            if (auto* stepArray = stepsValue.getArray())
             {
-                if (!candidateArray->isEmpty())
+                juce::String answer;
+                for (const auto& step : *stepArray)
                 {
-                    if (auto* candidateObject = candidateArray->getFirst().getDynamicObject())
+                    if (auto* stepObject = step.getDynamicObject())
                     {
-                        const auto content = candidateObject->getProperty("content");
-                        if (auto* contentObject = content.getDynamicObject())
+                        if (stepObject->getProperty("type").toString() != "model_output")
+                            continue;
+                        const auto contentValue = stepObject->getProperty("content");
+                        if (auto* contentArray = contentValue.getArray())
                         {
-                            const auto partsValue = contentObject->getProperty("parts");
-                            if (auto* partArray = partsValue.getArray())
+                            for (const auto& item : *contentArray)
                             {
-                                juce::String answer;
-                                for (const auto& part : *partArray)
-                                    if (auto* partObject = part.getDynamicObject())
-                                        answer += partObject->getProperty("text").toString();
-                                if (answer.isNotEmpty())
-                                    return answer;
+                                if (auto* itemObject = item.getDynamicObject())
+                                    if (itemObject->getProperty("type").toString() == "text")
+                                        answer += itemObject->getProperty("text").toString();
                             }
                         }
                     }
                 }
+                if (answer.isNotEmpty())
+                    return answer;
             }
         }
         return "Gemini returned no text. Try a shorter prompt.";
