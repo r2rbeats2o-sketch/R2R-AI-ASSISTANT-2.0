@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "GeminiClient.h"
 
 class R2RAIAssistantAudioProcessorEditor final : public juce::AudioProcessorEditor
 {
@@ -19,12 +20,15 @@ private:
 
     void setPage(int page);
     void refreshChordLabel();
+    void sendGeminiPrompt();
+    void styleTextEditor(juce::TextEditor& editor);
 
     R2RAIAssistantAudioProcessor& processor;
-    juce::Label brandLabel, versionLabel, pageTitle, statusLabel, chordLabel, assistantText;
-    juce::TextButton navAssistant, navChords, navMidi, navMix, generateButton, askButton;
+    GeminiClient gemini;
+    juce::Label brandLabel, versionLabel, pageTitle, statusLabel, chordLabel, assistantText, apiKeyLabel;
+    juce::TextButton navAssistant, navChords, navMidi, navMix, generateButton, askButton, saveKeyButton, clearKeyButton;
     juce::ComboBox rootBox, qualityBox;
-    juce::TextEditor promptBox;
+    juce::TextEditor promptBox, apiKeyBox;
     juce::Slider intensitySlider;
     int currentPage = 0;
 
