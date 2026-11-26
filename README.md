@@ -18,7 +18,7 @@ The VST3 bundle is produced under `build/R2R AI Assistant 2.0_artefacts/Release/
 
 ## Gemini AI connection
 
-The AI Assistant page connects to Google's Gemini Developer API using the `gemini-2.5-flash` model and the `generateContent` REST endpoint.
+The AI Assistant page connects to Google's Gemini Developer API using the `gemini-3.8-flash` model and Google's Interactions REST API.
 
 1. Create a Gemini API key in Google AI Studio: https://aistudio.google.com/app/apikey
 2. Open R2R AI Assistant 2.0 in your DAW.
@@ -27,7 +27,7 @@ The AI Assistant page connects to Google's Gemini Developer API using the `gemin
 
 The key is stored locally in the current Windows user's Credential Manager. It is not included in the source code or sent to this GitHub repository. The plugin sends the key to Google's Gemini API over HTTPS in the `x-goog-api-key` request header. Never share your API key or commit it to source control. Review your Google AI Studio project usage and applicable terms before using the API.
 
-The current integration sends one prompt per request; multi-turn chat history, streaming output, and a hosted backend are not implemented yet. Network calls run on a background thread so the plugin's audio callback is not blocked.
+The current integration sends one prompt per request; multi-turn chat history, streaming output, and a hosted backend are not implemented yet. Gemini requests run on a background thread and use the Windows HTTPS networking stack. Network calls run on a background thread so the plugin's audio callback is not blocked.
 
 ## Status
 
