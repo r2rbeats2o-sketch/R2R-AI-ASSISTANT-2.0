@@ -29,7 +29,8 @@ juce_add_plugin(R2RAIAssistant
 
 target_sources(R2RAIAssistant PRIVATE
   Source/PluginProcessor.cpp
-  Source/PluginEditor.cpp)
+  Source/PluginEditor.cpp
+  Source/GeminiClient.cpp)
 
 target_compile_definitions(R2RAIAssistant PUBLIC
   JUCE_WEB_BROWSER=0
@@ -46,3 +47,4 @@ target_link_libraries(R2RAIAssistant PRIVATE
 
 # Generate the aggregate JUCE header included by the plugin source files.
 juce_generate_juce_header(R2RAIAssistant)
+\nif (WIN32)\n  target_link_libraries(R2RAIAssistant PRIVATE winhttp advapi32)\nendif()\n
