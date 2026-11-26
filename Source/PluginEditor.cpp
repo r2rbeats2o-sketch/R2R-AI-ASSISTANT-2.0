@@ -52,7 +52,6 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     assistantText.setText("Your production co-pilot. Ask for arrangement ideas, sound-design direction, music theory help, or a mixing checklist. Remote AI chat is not connected in this starter build.", juce::dontSendNotification);
     assistantText.setColour(juce::Label::textColourId, muted);
     assistantText.setJustificationType(juce::Justification::topLeft);
-    assistantText.setMinimum水平Scale(1.0f);
     addAndMakeVisible(assistantText);
 
     promptBox.setMultiLine(true);
@@ -143,7 +142,9 @@ void R2RAIAssistantAudioProcessorEditor::setPage(int page)
     chordLabel.setVisible(chords);
     generateButton.setVisible(chords);
     intensitySlider.setVisible(page == 3);
-    if (page == 2)
+    if (page == 0)
+        assistantText.setText("Your production co-pilot. Ask for arrangement ideas, sound-design direction, music theory help, or a mixing checklist. Remote AI chat is not connected in this starter build.", juce::dontSendNotification);
+    else if (page == 2)
         assistantText.setText("MIDI WORKSPACE\n\nIncoming MIDI passes through. Use CHORD LAB to generate a triad into your DAW. Record the MIDI output on an instrument track routed from this plugin.", juce::dontSendNotification);
     else if (page == 3)
         assistantText.setText("MIX CHECKLIST\n\n1. Balance levels before adding processing.\n2. Check kick and bass interaction.\n3. Use reference tracks at matched loudness.\n4. Check mono compatibility and headroom.\n5. Leave final loudness decisions until the arrangement is balanced.", juce::dontSendNotification);
