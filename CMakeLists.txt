@@ -49,4 +49,4 @@ target_link_libraries(R2RAIAssistant PRIVATE
 juce_generate_juce_header(R2RAIAssistant)
 if (WIN32)
   target_link_libraries(R2RAIAssistant PRIVATE winhttp advapi32)
-endif()\n
+endif()
