@@ -217,7 +217,7 @@ void R2RAIAssistantAudioProcessorEditor::sendGeminiPrompt()
     assistantText.setText(useGemini ? "GEMINI IS THINKING...\nSending request over HTTPS."
                                     : "GEMMA IS THINKING...\nRunning locally through Ollama on this PC.",
                           juce::dontSendNotification);
-    statusLabel.setText(useGemini ? "CONNECTING TO GEMINI..." : "CONNECTING TO LOCAL OLLAMA...");
+    statusLabel.setText(useGemini ? "CONNECTING TO GEMINI..." : "CONNECTING TO LOCAL OLLAMA...", juce::dontSendNotification);
     askButton.setEnabled(false);
 
     juce::Component::SafePointer<R2RAIAssistantAudioProcessorEditor> safeThis(this);
