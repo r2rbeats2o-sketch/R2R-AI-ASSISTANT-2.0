@@ -54,7 +54,7 @@ namespace
         }
 
         HINTERNET request = WinHttpOpenRequest(connection, L"POST",
-            L"/v1beta/interactions", nullptr,
+            L"/v1beta/models/gemini-2.5-flash:generateContent", nullptr,
             WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
 
         if (request == nullptr)
@@ -64,21 +64,25 @@ namespace
             return "Connection error: could not create the HTTPS request.";
         }
 
-        const auto keyUtf8 = key.toUTF8();
-        const auto headers = juce::String("Content-Type: application/json\r\n")
-                           + "x-goog-api-key: " + key + "\r\n";
-        const auto headersWide = headers.toWideCharPointer();
-        const auto json = juce::JSON::toString(juce::var(new juce::DynamicObject()), true);
-        juce::ignoreUnused(json);
-
-        auto* bodyObject = new juce::DynamicObject();
-        bodyObject->setProperty("model", "gemini-3.8-flash");
-        bodyObject->setProperty("input", prompt);
+        const auto headers = juce::String("Content-Type: application/json\\r\\n")
+                           + "x-goog-api-key: " + key + "\\r\\n";
+        const auto bodyObject = new juce::DynamicObject();
+        auto* userContent = new juce::DynamicObject();
+        auto* textPart = new juce::DynamicObject();
+        textPart->setProperty("text", prompt);
+        juce::Array<juce::var> parts;
+        parts.add(juce::var(textPart));
+        userContent->setProperty("parts", juce::var(parts));
+        userContent->setProperty("role", "user");
+        juce::Array<juce::var> contents;
+        contents.add(juce::var(userContent));
+        bodyObject->setProperty("contents", juce::var(contents));
         const auto body = juce::JSON::toString(juce::var(bodyObject));
         const auto bodyUtf8 = body.toUTF8();
 
-        const BOOL sent = WinHttpSendRequest(request, headersWide, static_cast<DWORD>(-1L),
-            const_cast<char*>(bodyUtf8.getAddress()), static_cast<DWORD>(bodyUtf8.sizeInBytes() - 1),
+        const BOOL sent = WinHttpSendRequest(request, headers.toWideCharPointer(),
+            static_cast<DWORD>(-1L), const_cast<char*>(bodyUtf8.getAddress()),
+            static_cast<DWORD>(bodyUtf8.sizeInBytes() - 1),
             static_cast<DWORD>(bodyUtf8.sizeInBytes() - 1), 0);
         if (!sent || !WinHttpReceiveResponse(request, nullptr))
         {
@@ -122,35 +126,34 @@ namespace
                          + errorObject->getProperty("message").toString();
             }
             return "Gemini API returned HTTP " + juce::String((int) statusCode)
-                 + ". Check the API key and Gemini API access.";
+                 + ". Check the API key, model access, and Gemini API quota.";
         }
 
         if (auto* root = parsed.getDynamicObject())
         {
-            const auto stepsValue = root->getProperty("steps");
-            if (auto* stepArray = stepsValue.getArray())
+            const auto candidatesValue = root->getProperty("candidates");
+            if (auto* candidates = candidatesValue.getArray())
             {
-                juce::String answer;
-                for (const auto& step : *stepArray)
+                for (const auto& candidate : *candidates)
                 {
-                    if (auto* stepObject = step.getDynamicObject())
+                    if (auto* candidateObject = candidate.getDynamicObject())
                     {
-                        if (stepObject->getProperty("type").toString() != "model_output")
-                            continue;
-                        const auto contentValue = stepObject->getProperty("content");
-                        if (auto* contentArray = contentValue.getArray())
+                        const auto contentValue = candidateObject->getProperty("content");
+                        if (auto* contentObject = contentValue.getDynamicObject())
                         {
-                            for (const auto& item : *contentArray)
+                            const auto partsValue = contentObject->getProperty("parts");
+                            if (auto* responseParts = partsValue.getArray())
                             {
-                                if (auto* itemObject = item.getDynamicObject())
-                                    if (itemObject->getProperty("type").toString() == "text")
-                                        answer += itemObject->getProperty("text").toString();
+                                juce::String answer;
+                                for (const auto& part : *responseParts)
+                                    if (auto* partObject = part.getDynamicObject())
+                                        answer += partObject->getProperty("text").toString();
+                                if (answer.isNotEmpty())
+                                    return answer;
                             }
                         }
                     }
                 }
-                if (answer.isNotEmpty())
-                    return answer;
             }
         }
         return "Gemini returned no text. Try a shorter prompt.";
