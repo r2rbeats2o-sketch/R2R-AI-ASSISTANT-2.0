@@ -19,16 +19,18 @@ private:
     };
 
     void setPage(int page);
+    void updateProviderControls();
     void refreshChordLabel();
     void sendGeminiPrompt();
     void styleTextEditor(juce::TextEditor& editor);
 
     R2RAIAssistantAudioProcessor& processor;
     GeminiClient gemini;
-    juce::Label brandLabel, versionLabel, pageTitle, statusLabel, chordLabel, assistantText, apiKeyLabel;
+    juce::Label brandLabel, versionLabel, pageTitle, statusLabel, chordLabel, assistantText;
+    juce::Label apiKeyLabel, providerLabel, localModelLabel;
     juce::TextButton navAssistant, navChords, navMidi, navMix, generateButton, askButton, saveKeyButton, clearKeyButton;
-    juce::ComboBox rootBox, qualityBox;
-    juce::TextEditor promptBox, apiKeyBox;
+    juce::ComboBox rootBox, qualityBox, providerBox;
+    juce::TextEditor promptBox, apiKeyBox, localModelBox;
     juce::Slider intensitySlider;
     int currentPage = 0;
 
