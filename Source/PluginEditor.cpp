@@ -81,15 +81,6 @@ R2RAIAssistantAudioProcessorEditor::R2RAIAssistantAudioProcessorEditor(R2RAIAssi
     apiKeyBox.setTextToShowWhenEmpty("Paste Gemini API key here...", muted);
     addAndMakeVisible(apiKeyBox);
 
-    localModelLabel.setText("LOCAL MODEL  •  DEFAULT: gemma4:e2b", juce::dontSendNotification);
-    localModelLabel.setColour(juce::Label::textColourId, cyan);
-    localModelLabel.setFont(juce::Font(juce::FontOptions(10.0f, juce::Font::bold)));
-    addAndMakeVisible(localModelLabel);
-    styleTextEditor(localModelBox);
-    localModelBox.setText("gemma4:e2b", false);
-    localModelBox.setTextToShowWhenEmpty("Ollama model name, e.g. gemma4:e2b", muted);
-    addAndMakeVisible(localModelBox);
-
     auto styleSmallButton = [](juce::TextButton& b, juce::Colour colour)
     {
         b.setColour(juce::TextButton::buttonColourId, colour);
@@ -183,11 +174,11 @@ void R2RAIAssistantAudioProcessorEditor::updateProviderControls()
     apiKeyBox.setVisible(assistant && useGemini);
     saveKeyButton.setVisible(assistant && useGemini);
     clearKeyButton.setVisible(assistant && useGemini);
-    localModelLabel.setVisible(assistant && !useGemini);
-    localModelBox.setVisible(assistant && !useGemini);
-    askButton.setButtonText(useGemini ? "ASK GEMINI" : "ASK GEMMA");
+    askButton.setButtonText(useGemini ? "ASK GEMINI" : "OPEN CHATGPT FREE");
     if (assistant)
-        statusLabel.setText(useGemini ? "GEMINI ONLINE  •  API KEY REQUIRED" : "GEMMA LOCAL  •  OLLAMA MUST BE RUNNING", juce::dontSendNotification);
+        statusLabel.setText(useGemini ? "GEMINI ONLINE  •  API KEY REQUIRED"
+                                      : "CHATGPT FREE  •  OPENS IN YOUR BROWSER",
+                            juce::dontSendNotification);
     resized();
 }
 
@@ -195,49 +186,51 @@ void R2RAIAssistantAudioProcessorEditor::sendGeminiPrompt()
 {
     const auto prompt = promptBox.getText().trim();
     const bool useGemini = providerBox.getSelectedId() == 2;
-    const auto key = apiKeyBox.getText().trim().isNotEmpty() ? apiKeyBox.getText().trim() : gemini.loadApiKey();
-    const auto model = localModelBox.getText().trim();
 
     if (prompt.isEmpty())
     {
         assistantText.setText("Type a music-production question first.", juce::dontSendNotification);
         return;
     }
-    if (useGemini && key.isEmpty())
+
+    if (!useGemini)
     {
-        statusLabel.setText("API KEY REQUIRED  •  SWITCH TO GEMMA LOCAL OR ADD A KEY", juce::dontSendNotification);
-        return;
-    }
-    if (!useGemini && model.isEmpty())
-    {
-        statusLabel.setText("MODEL NAME REQUIRED  •  ENTER AN INSTALLED OLLAMA MODEL", juce::dontSendNotification);
+        juce::SystemClipboard::copyText(prompt);
+        const bool opened = juce::URL("https://chatgpt.com/").launchInDefaultBrowser();
+        assistantText.setText("CHATGPT FREE OPENED IN YOUR BROWSER.\\n\\nYour prompt has been copied to the clipboard. Paste it into ChatGPT and send. Replies appear in the browser, not inside this VST3.",
+                              juce::dontSendNotification);
+        statusLabel.setText(opened ? "PROMPT COPIED  •  CHATGPT OPENED IN BROWSER"
+                                   : "PROMPT COPIED  •  OPEN CHATGPT.COM IN YOUR BROWSER",
+                            juce::dontSendNotification);
         return;
     }
 
-    assistantText.setText(useGemini ? "GEMINI IS THINKING...\nSending request over HTTPS."
-                                    : "GEMMA IS THINKING...\nRunning locally through Ollama on this PC.",
-                          juce::dontSendNotification);
-    statusLabel.setText(useGemini ? "CONNECTING TO GEMINI..." : "CONNECTING TO LOCAL OLLAMA...", juce::dontSendNotification);
+    const auto key = apiKeyBox.getText().trim().isNotEmpty() ? apiKeyBox.getText().trim() : gemini.loadApiKey();
+    if (key.isEmpty())
+    {
+        statusLabel.setText("GEMINI API KEY REQUIRED  •  OR SELECT CHATGPT FREE", juce::dontSendNotification);
+        return;
+    }
+
+    assistantText.setText("GEMINI IS THINKING...\\nSending request over HTTPS.", juce::dontSendNotification);
+    statusLabel.setText("CONNECTING TO GEMINI...", juce::dontSendNotification);
     askButton.setEnabled(false);
 
     juce::Component::SafePointer<R2RAIAssistantAudioProcessorEditor> safeThis(this);
-    const auto callback = [safeThis, useGemini](const juce::String& answer)
+    const auto callback = [safeThis](const juce::String& answer)
     {
         if (safeThis == nullptr)
             return;
         safeThis->assistantText.setText(answer, juce::dontSendNotification);
-        const bool failed = answer.startsWith("Gemini API error") || answer.startsWith("Gemma Local error")
+        const bool failed = answer.startsWith("Gemini API error")
                          || answer.startsWith("Network error") || answer.startsWith("Connection error");
         safeThis->statusLabel.setText(failed ? "AI REQUEST FAILED  •  SEE MESSAGE ABOVE"
-                                             : (useGemini ? "GEMINI ONLINE  •  RESPONSE RECEIVED"
-                                                          : "GEMMA LOCAL  •  RESPONSE RECEIVED"),
+                                             : "GEMINI ONLINE  •  RESPONSE RECEIVED",
                                       juce::dontSendNotification);
         safeThis->askButton.setEnabled(true);
     };
 
-    const bool started = useGemini ? gemini.ask(prompt, key, callback)
-                                   : gemini.askLocal(prompt, model, callback);
-    if (!started)
+    if (!gemini.ask(prompt, key, callback))
     {
         askButton.setEnabled(true);
         statusLabel.setText("REQUEST BUSY  •  WAIT FOR THE CURRENT RESPONSE", juce::dontSendNotification);
