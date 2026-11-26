@@ -47,4 +47,6 @@ target_link_libraries(R2RAIAssistant PRIVATE
 
 # Generate the aggregate JUCE header included by the plugin source files.
 juce_generate_juce_header(R2RAIAssistant)
-\nif (WIN32)\n  target_link_libraries(R2RAIAssistant PRIVATE winhttp advapi32)\nendif()\n
+if (WIN32)
+  target_link_libraries(R2RAIAssistant PRIVATE winhttp advapi32)
+endif()\n
